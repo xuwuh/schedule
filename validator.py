@@ -1,17 +1,13 @@
 import json
 from collections  import defaultdict
 
-class Checker:
-  def __init__(self ):
-    pass
-
-  def validator(self , schebule_data):
+def validator(schedule_data):
     errors=[]
 
     teacher_busy=defaultdict(list)
     auditorium_busy=defaultdict(list)
 
-    for lesson in schebule_data.get("lessons", []):
+    for lesson in schedule_data.get("lessons", []):
       auditorium=lesson["аудитория"]
       teacher=lesson["преподаватель"]
       subject=lesson["предмет"]
@@ -34,13 +30,11 @@ class Checker:
       auditorium_busy[key].append((auditorium, id))
     return errors
 
-def check_schebule(file_path):
-  checker=Checker()
-
+def check_schedule(file_path):
   with open(file_path, "r", encoding='utf-8') as f:
-    schebule=json.load(f)
+    schedule=json.load(f)
 
-  errors=checker.validator(schebule)
+  errors=validator(schedule)
 
   if errors:
     for error in errors:
@@ -49,5 +43,5 @@ def check_schebule(file_path):
       print("OK")
 
 if __name__=="__main__":
-  schebule_path="lessons.json"
-  check_schebule(schebule_path)
+  schedule_path="lessons.json"
+  check_schedule(schedule_path)
