@@ -21,7 +21,6 @@ for i in range(1, n_auditoriums+1):
       "вместимость": random.choices(aud_campacity, aud_campasity_prods)[0],
       "тип аудитории": random.choice([0,1]) #1-тех, 0-не тех
   })
-#мб исправить тип аудитории или добавить поточный/обычный кабинет
 
 #преподаватели
 teachers_name=[]

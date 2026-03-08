@@ -1,0 +1,81 @@
+/*весь сайт*/
+body{
+    background-color: #e5e1ee;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/*заголовок*/
+.title{
+    background-color: #4a509a;
+    color: white;
+    width: 100%;
+    padding: 5px 50px;
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 900;
+    font-style: normal;
+}
+
+/*основной блок с текстом*/
+.info{
+    color: #4a509a;
+    margin: 50px 50px;
+    width: 40%;
+    text-align: justify;
+}
+.dig-text{
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 30px;
+}
+.small-text{
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 20px;
+}
+.small-text-info{
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: italic;
+    font-size: 20px;
+}
+
+/*кнопки*/
+.btn{
+    display: block;
+    padding: auto;
+    text-align: center;
+    text-decoration: none;
+    margin-bottom: 10px;
+    line-height: 50px;
+
+    background-color: transparent;
+    color: #4a509a;
+    border: 2px solid #4a509a;
+
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 5px;
+
+    min-width: 200px;
+    width: auto;
+    height: 50px;
+    border-radius: 30px;
+
+    font-size: 25px;
+}
+.btn:hover {
+    background-color: #4a509a;
+    transition: background-color 0.3s ease;
+    color: white;
+    border-color: #4a509a;
+}
