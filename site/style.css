@@ -18,39 +18,22 @@ body{
     font-style: normal;
 }
 
-/*основной блок с текстом*/
+/*основной блок*/
 .info{
     color: #4a509a;
-    margin: 50px 50px;
-    width: 40%;
+    margin: 30px auto;
+    width: 80%;
     text-align: justify;
-}
-.dig-text{
-    font-family: "Montserrat", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 600;
-    font-style: normal;
-    font-size: 30px;
-}
-.small-text{
-    font-family: "Montserrat", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 500;
-    font-style: normal;
-    font-size: 20px;
-}
-.small-text-info{
-    font-family: "Montserrat", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 500;
-    font-style: italic;
-    font-size: 20px;
+
+    display: flex;
+    justify-content: center;
+    gap: 20px;
 }
 
 /*кнопки*/
 .btn{
-    display: block;
-    padding: auto;
+    display: inline-block;
+    padding: 10px 15px;
     text-align: center;
     text-decoration: none;
     margin-bottom: 10px;
@@ -64,11 +47,10 @@ body{
     font-optical-sizing: auto;
     font-weight: 400;
     font-style: normal;
-    font-size: 5px;
+    font-size: 1rem;
 
     min-width: 200px;
     width: auto;
-    height: 50px;
     border-radius: 30px;
 
     font-size: 25px;
