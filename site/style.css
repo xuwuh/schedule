@@ -28,6 +28,12 @@ body{
     display: flex;
     justify-content: center;
     gap: 20px;
+
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 1rem;
 }
 
 /*кнопки*/
@@ -43,12 +49,6 @@ body{
     color: #4a509a;
     border: 2px solid #4a509a;
 
-    font-family: "Montserrat", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 1rem;
-
     min-width: 200px;
     width: auto;
     border-radius: 30px;
@@ -60,4 +60,36 @@ body{
     transition: background-color 0.3s ease;
     color: white;
     border-color: #4a509a;
+}
+
+/*поля для ввода информации*/
+.info_form{
+    color: #4a509a;
+    margin: 30px 40px;
+    width: 50%;
+    text-align: justify;
+
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 1rem;
+}
+
+.text_line{
+    border: none;
+    border-bottom: 5px #4a509a;
+    width: 40%;
+    background-color: transparent;
+
+    color: #4a509a;
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 1rem;
 }
