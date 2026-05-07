@@ -30,18 +30,25 @@ for i in range(1, n_auditoriums+1):
 #предметы
 subject=[]
 subject_name=[
-    "математика", "русский", "литература", "информатика", "естествознание", "экономика", "философия"
-]
+    "математика", "русский", "литература", "информатика", "естествознание", "экономика", "философия"]
 for i in range(1, n_subject+1):
   sub_name=subject_name[i-1]
   for typ in [1,0]: #1-лекция, 0-семинар
-    subject.append({
+      dop=[]
+      if random.random()<0.2:
+        dop.append("тех")
+      if random.random()<0.5:
+        dop.append("экран")
+      if not dop:
+        dop.append("-")
+      subject.append({
         "id": len(subject)+1,
         "название": sub_name,
         "часы в неделю": random.randrange(2,8,2),
         "тип занятия": typ,
-        "длительность": random.choice([45, 90])
-    })
+        "длительность": random.choice([45, 90]),
+        "дополнительны условия": dop
+      })
 subject_ids=[subj["id"] for subj in subject]
     
 #преподаватели
@@ -71,7 +78,7 @@ for subj_id in range(1, n_subject+1):
   if len(sub_to_teach[subj_id])==0:
     teach_id=random.randint(1, n_teachers)
     sub_to_teach[subj_id].append(teach_id)
-    if subj_id not in teacher[teach_id-1]["преподает предметы (id)"]:
+    if subj_id not in teachers[teach_id-1]["преподает предметы (id)"]:
       teachers[teach_id-1]["преподает предметы (id)"].append(subj_id)
 
 
