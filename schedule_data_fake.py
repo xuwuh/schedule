@@ -96,7 +96,7 @@ for i in range(1, n_groups+1):
 
   groups.append({
       "id": i,
-      "номер": random.randint(1, 10),
+      "номер": 10+i,
       "кол-во человек": random.randint(10,30),
       "предметы (id)": groups_subject
   })
