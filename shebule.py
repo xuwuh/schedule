@@ -70,7 +70,10 @@ def choose_aud(auds, aud_busy, subj, aud_size, day, start, end):
         res_aud.append(aud)
     if not res_aud:
         return None
-    res_aud.sort(key=lambda room: (aud_prior(room, subj), room.get("вместимость", 0)))
+    if subj.get("тип занятий")==1:
+        res_aud.sort(key=lambda aud:(aud_prior(aud, subj), -aud.get("вместимоть",0)))
+    else:
+        res_aud.sort(lambda aud:(aud_prior(aud, subj), aud.get("вместимоть",0)))
     return res_aud[0]
 
 #выбор преподавателя
