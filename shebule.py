@@ -70,10 +70,10 @@ def choose_aud(auds, aud_busy, subj, aud_size, day, start, end):
         res_aud.append(aud)
     if not res_aud:
         return None
-    if subj.get("тип занятий")==1:
-        res_aud.sort(key=lambda aud:(aud_prior(aud, subj), -aud.get("вместимоть",0)))
+    if subj.get("тип занятия")==1:
+        res_aud.sort(key=lambda aud:(aud_prior(aud, subj), -aud.get("вместимость",0)))
     else:
-        res_aud.sort(lambda aud:(aud_prior(aud, subj), aud.get("вместимоть",0)))
+        res_aud.sort(key=lambda aud:(aud_prior(aud, subj), aud.get("вместимость",0)))
     return res_aud[0]
 
 #выбор преподавателя
@@ -97,19 +97,37 @@ def choose_teac(teach, teach_busy, teach_load, subj_id, academ_hour, day, start,
 #список занятий которые надо поствить
 def build_lesson_tasks(groups, subj_id):
     tasks=[]
+    lecture_groups=defaultdict(list)
+
     for group in groups:
         for subject_id in group.get("предметы (id)", []):
             subj=subj_id[subject_id]
-            total_min=subj.get("часы в неделю", 0) * academ_hour
-            mint=subj.get("длительность", academ_hour)
-            lesson_count=math.ceil(total_min/mint)
-            for lesson_n in range(lesson_count):
-                tasks.append({
-                    "group": group,
-                    "subj": subj,
-                    "subject_id": subject_id,
-                    "mint": mint,
-                    "lesson_number": lesson_n+1
+            if subj.get("тип занятия")==1:
+                lecture_groups[subject_id].append(group)
+            else:
+                total_min=subj.get("часы в неделю", 0) * academ_hour
+                mint=subj.get("длительность", academ_hour)
+                lesson_count=math.ceil(total_min/mint)
+                for lesson_n in range(lesson_count):
+                    tasks.append({
+                        "groups": [group],
+                        "subj": subj,
+                        "subject_id": subject_id,
+                        "mint": mint,
+                        "lesson_number": lesson_n+1
+                    })
+    for subject_id, groups_for_lecture in lecture_groups.items():
+        subj=subj_id[subject_id]
+        total_min=subj.get("часы в неделю", 0)*academ_hour
+        mint=subj.get("длительность", academ_hour)
+        lesson_count=math.ceil(total_min/mint)
+        for lesson_n in range(lesson_count):
+            tasks.append({
+                "groups": groups_for_lecture,
+                "subj": subj,
+                "subject_id": subject_id,
+                "mint": mint,
+                "lesson_number": lesson_n+1
                 })
     tasks.sort(key=lambda task: (-task["mint"], -task["subj"].get("часы в неделю", 0)))
     return tasks
@@ -132,12 +150,11 @@ def schedule(data):
     tasks=build_lesson_tasks(gr, subj__id)
 
     for task in tasks:
-        group=task["group"]
+        groups_for_lesson=task["groups"]
         subject=task["subj"]
         subject_id=task["subject_id"]
         mint=task["mint"]
-        group_id=group["id"]
-        group_size=group.get("кол-во человек", 0)
+        group_size=sum(group.get("кол-во человек", 0) for group in groups_for_lesson)
         lesson_academic_hours=mint/academ_hour
         best_variant=None
         best_score=float("inf")
@@ -146,7 +163,12 @@ def schedule(data):
             latest_start=end_day-mint
             for start in range(start_day, latest_start+1, braek_min):
                 end=start+mint
-                if not busys(gr_busy, group_id, day, start, end):
+                groups_free=True
+                for group in groups_for_lesson:
+                    if not busys(gr_busy, group["id"], day, start, end):
+                        groups_free=False
+                        break
+                if not groups_free:
                     continue
                 teacher = choose_teac(teach, teach_busy, teach_load, subject_id, lesson_academic_hours, day, start, end)
                 if teacher is None:
@@ -155,7 +177,9 @@ def schedule(data):
                 if room is None:
                     continue
 
-                gr_windows=window(gr_busy, group_id, day, start, end)
+                gr_windows=0
+                for group in groups_for_lesson:
+                    gr_windows += window(gr_busy, group["id"], day, start, end)
                 teach_windows=window(teach_busy, teacher["id"], day, start, end)
                 aud_score=aud_prior(room, subject)
                 early_score=start-start_day
@@ -168,7 +192,7 @@ def schedule(data):
 
         if best_variant is None:
             unplaced.append({
-                "группа": str(group.get("номер")),
+                "группа": ", ".join(str(group.get("номер")) for group in groups_for_lesson),
                 "предмет": subject.get("название"),
                 "тип": "Лекция" if subject.get("тип занятия")==1 else "Семинар",
                 "длительность": mint,
@@ -177,7 +201,8 @@ def schedule(data):
             continue
 
         day, start, end, teacher, room=best_variant
-        add_busy(gr_busy, group_id, day, start, end)
+        for group in groups_for_lesson:
+            add_busy(gr_busy, group["id"], day, start, end)
         add_busy(teach_busy, teacher["id"], day, start, end)
         add_busy(aud_busy, room["id"], day, start, end)
         teach_load[teacher["id"]]+=lesson_academic_hours
@@ -187,7 +212,7 @@ def schedule(data):
             "преподаватель": teacher["ФИО"],
             "предмет": subject["название"],
             "тип": "Лекция" if subject.get("тип занятия")==1 else "Семинар",
-            "группа": str(group.get("номер")),
+            "группа": ", ".join(str(group.get("номер")) for group in groups_for_lesson),
             "день_недели": day,
             "время": f"{time(start)} – {time(end)}"
         })
