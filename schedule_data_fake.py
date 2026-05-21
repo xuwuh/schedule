@@ -1,4 +1,4 @@
-import json
+from openpyxl import Workbook
 import random
 from faker import Faker
 
@@ -50,6 +50,7 @@ for i in range(1, n_subject+1):
         "дополнительны условия": dop
       })
 subject_ids=[subj["id"] for subj in subject]
+subject_dict = {subj["id"]: subj["название"] for subj in subject}
     
 #преподаватели
 teachers_name=[]
@@ -117,7 +118,42 @@ for subj_id in range(1, n_subject+1):
   }
 
 
-#сохранение файла
-with open("schedule_data.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=4)
-print("база данных сохранена")
+# сохранение в Excel
+wb = Workbook()
+
+# удаляем стандартный лист
+wb.remove(wb.active)
+
+for sheet_name, rows in data.items():
+    ws = wb.create_sheet(title=sheet_name)
+
+    if rows:
+        headers = list(rows[0].keys())
+        ws.append(headers)
+
+        for row in rows:
+          new_row = []
+          for key, value in row.items():
+            if key in ["преподает предметы (id)", "предметы (id)"]:
+              subjects_names = []
+              for subj_id in value:
+                  subj = next(
+                      s for s in subject
+                      if s["id"] == subj_id)
+                  lesson_type = (
+                      "лекция"
+                      if subj["тип занятия"] == 1
+                      else "семинар")
+                  subjects_names.append(
+                      f'{subj["название"]} ({lesson_type})')
+              new_row.append(", ".join(subjects_names))
+            else:
+              if isinstance(value, list):
+                  new_row.append(", ".join(value))
+              else:
+                  new_row.append(str(value))
+          ws.append(new_row)
+
+wb.save("schedule_data.xlsx")
+
+print("Excel база данных сохранена")
