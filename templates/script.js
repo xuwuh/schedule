@@ -784,9 +784,16 @@ async function uploadSchedule() {
   dynamicSchedule = data;
 
   await refreshOptions();
+
   fillDynamicGroupSelect();
+
+  dynamicGroupSelect.value = 'Все группы';
+
   renderDynamicSchedule();
   renderAction();
+
+  dynamicUploadStatus.textContent = 'Расписание загружено и отображено в таблице';
+  dynamicUploadStatus.className = 'status ok';
 }
 
 async function uploadData() {
@@ -1035,6 +1042,107 @@ function renderAction() {
   }
 }
 
+function getSuitableTeachersForLesson(lesson) {
+  const subjectName = String(lesson[keys.subject] || '').trim().toLowerCase();
+  const lessonType = String(lesson[keys.type] || '').trim().toLowerCase();
+
+  const subject = (sourceData['предметы'] || []).find(item => {
+    const name = String(item['название'] || '').trim().toLowerCase();
+    const type = String(item['тип занятия'] || '').trim();
+
+    const normalizedType =
+      type === '1' || type.toLowerCase() === 'лекция'
+        ? 'лекция'
+        : 'семинар';
+
+    return name === subjectName && normalizedType === lessonType;
+  });
+
+  if (!subject) {
+    return [];
+  }
+
+  return (sourceData['преподаватели'] || [])
+    .filter(teacher =>
+      (teacher['преподает предметы (id)'] || []).includes(subject.id)
+    )
+    .map(teacher => teacher['ФИО'])
+    .filter(name => name && name !== lesson[keys.teacher]);
+}
+
+function renderReplacementTeacherSelectors() {
+  const selectedLessonIds = selectedIds();
+
+  const selectedLessons = (dynamicSchedule.lessons || []).filter(lesson =>
+    selectedLessonIds.includes(String(lesson._id))
+  );
+
+  const box = document.getElementById('teacherReplacementBox');
+
+  if (!box) return;
+
+  if (!selectedLessons.length) {
+    box.innerHTML = `
+      <span class="hint">
+        Выберите одну или несколько пар, чтобы назначить замену.
+      </span>
+    `;
+    return;
+  }
+
+  box.innerHTML = selectedLessons.map(lesson => {
+    const suitableTeachers = getSuitableTeachersForLesson(lesson);
+
+    return `
+      <div class="replacement-card">
+        <div class="replacement-title">
+          ${esc(lesson[keys.day])} · ${esc(lesson[keys.time])}
+        </div>
+
+        <div class="replacement-info">
+          ${esc(lesson[keys.subject])} (${esc(lesson[keys.type])})<br>
+          Группа: ${esc(lesson[keys.group])}<br>
+          Сейчас ведёт: ${esc(lesson[keys.teacher])}
+        </div>
+
+        <label>Кем заменить эту пару</label>
+
+        <select
+          class="teacher-replacement-select"
+          data-lesson-id="${esc(lesson._id)}"
+        >
+          <option value="">Автоматически подобрать преподавателя</option>
+          ${suitableTeachers.map(teacher => `
+            <option value="${esc(teacher)}">${esc(teacher)}</option>
+          `).join('')}
+        </select>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTeacherLessonChecks(lessons, emptyText = 'Выберите преподавателя, чтобы увидеть его занятия') {
+  return `
+    <div class="list">
+      ${
+        lessons.length
+          ? lessons.map(lesson => `
+              <label class="check-line">
+                <input
+                  type="checkbox"
+                  name="lessonPick"
+                  value="${esc(lesson._id)}"
+                  onchange="renderReplacementTeacherSelectors()"
+                >
+                <span>${esc(lessonLine(lesson))}</span>
+              </label>
+            `).join('')
+          : `<span class="hint">${emptyText}</span>`
+      }
+    </div>
+  `;
+}
+
 function renderReplaceTeacherForm() {
   const selectedTeacher =
     document.getElementById('currentTeacher')?.value || '';
@@ -1046,26 +1154,23 @@ function renderReplaceTeacherForm() {
     : [];
 
   actionForm.innerHTML = `
-    <div class="two">
-      <div>
-        <label>Чьи занятия меняем</label>
-        <select id="currentTeacher" onchange="renderAction()">
-          ${listOptions(options.teachers, 'Выберите преподавателя')}
-        </select>
-      </div>
-
-      <div>
-        <label>Новый преподаватель</label>
-        <select id="newTeacher">
-          ${listOptions(options.teachers, 'Выберите преподавателя')}
-        </select>
-      </div>
+    <div>
+      <label>Преподаватель, которого заменяем</label>
+      <select id="currentTeacher" onchange="renderAction()">
+        ${listOptions(options.teachers, 'Выберите преподавателя')}
+      </select>
     </div>
 
-    ${renderLessonChecks(
+    ${renderTeacherLessonChecks(
       lessons,
       'Выберите преподавателя, чтобы увидеть его занятия'
     )}
+
+    <div id="teacherReplacementBox" class="replacement-list">
+      <span class="hint">
+        Выберите пару, чтобы увидеть список подходящих преподавателей.
+      </span>
+    </div>
   `;
 
   currentTeacher.value = selectedTeacher;
@@ -1101,6 +1206,106 @@ function renderRemoveLessonForm(current) {
 
   restoreFilters(current);
 }
+function normalizeLessonType(value) {
+  const text = String(value || '').trim().toLowerCase();
+
+  if (text === '1' || text === 'лекция') {
+    return 'лекция';
+  }
+
+  if (text === '0' || text === 'семинар') {
+    return 'семинар';
+  }
+
+  return text;
+}
+
+function getSubjectIdByNameAndType(subjectName, lessonType) {
+  const normalizedName = String(subjectName || '').trim().toLowerCase();
+  const normalizedType = normalizeLessonType(lessonType);
+
+  const subject = (sourceData['предметы'] || []).find(item => {
+    const itemName = String(item['название'] || '').trim().toLowerCase();
+    const itemType = normalizeLessonType(item['тип занятия']);
+
+    return itemName === normalizedName && itemType === normalizedType;
+  });
+
+  return subject ? subject.id : null;
+}
+
+function getTeachersForSubjectAndType(subjectName, lessonType) {
+  const subjectId = getSubjectIdByNameAndType(subjectName, lessonType);
+
+  if (!subjectId) {
+    return [];
+  }
+
+  return (sourceData['преподаватели'] || [])
+    .filter(teacher =>
+      (teacher['преподает предметы (id)'] || []).includes(subjectId)
+    )
+    .map(teacher => teacher['ФИО'])
+    .filter(Boolean);
+}
+
+function getSelectedReplacementLesson() {
+  const selectedLessonIds = selectedIds();
+
+  if (!selectedLessonIds.length) {
+    return null;
+  }
+
+  return (dynamicSchedule.lessons || []).find(lesson =>
+    selectedLessonIds.includes(String(lesson._id))
+  ) || null;
+}
+
+function updateReplacementTeachers() {
+  const mode = document.getElementById('subjectMode')?.value || 'existing';
+  const teacherBox = document.getElementById('replacementTeacherBox');
+
+  if (!teacherBox) return;
+
+  if (mode === 'custom') {
+    teacherBox.innerHTML = `
+      <label>Преподаватель</label>
+      <select id="replacementTeacher">
+        ${listOptions(options.teachers, 'Оставить как было')}
+      </select>
+
+      <span class="hint">
+        Для своего занятия проверка преподавателя по предмету не выполняется.
+      </span>
+    `;
+    return;
+  }
+
+  const selectedLesson = getSelectedReplacementLesson();
+  const subjectSelect = document.getElementById('replacementSubject');
+
+  if (!selectedLesson || !subjectSelect) {
+    teacherBox.innerHTML = `
+      <label>Преподаватель</label>
+      <select id="replacementTeacher">
+        <option value="">Сначала выберите пару</option>
+      </select>
+    `;
+    return;
+  }
+
+  const selectedSubject = subjectSelect.value;
+  const lessonType = selectedLesson[keys.type];
+
+  const teachers = getTeachersForSubjectAndType(selectedSubject, lessonType);
+
+  teacherBox.innerHTML = `
+    <label>Преподаватель</label>
+    <select id="replacementTeacher">
+      ${listOptions(teachers, 'Автоматически подобрать преподавателя')}
+    </select>
+  `;
+}
 
 function renderReplaceLessonForm(current) {
   const mode = document.getElementById('subjectMode')?.value || 'existing';
@@ -1120,7 +1325,7 @@ function renderReplaceLessonForm(current) {
     <div id="subjectBox">
       ${
         mode === 'existing'
-          ? `<select id="replacementSubject">
+          ? `<select id="replacementSubject" onchange="updateReplacementTeachers()">
                ${listOptions(options.subjects, 'Выберите предмет')}
              </select>`
           : `<input id="replacementSubject" placeholder="Название нового занятия">`
@@ -1128,10 +1333,14 @@ function renderReplaceLessonForm(current) {
     </div>
 
     <div class="two">
-      <div>
+      <div id="replacementTeacherBox">
         <label>Преподаватель</label>
         <select id="replacementTeacher">
-          ${listOptions(options.teachers, 'Оставить как было')}
+          ${
+            mode === 'custom'
+              ? listOptions(options.teachers, 'Оставить как было')
+              : '<option value="">Сначала выберите пару и предмет</option>'
+          }
         </select>
       </div>
 
@@ -1146,6 +1355,10 @@ function renderReplaceLessonForm(current) {
 
   restoreFilters(current);
   subjectMode.value = mode;
+
+  if (mode === 'existing') {
+    updateReplacementTeachers();
+  }
 }
 
 function renderAddWindowForm() {
@@ -1186,12 +1399,20 @@ async function applyChange() {
   };
 
   if (action === 'replace_teacher') {
-    change = {
-      ...change,
-      teacher: newTeacher.value,
-      lesson_ids: selectedIds()
-    };
-  }
+  const teacherMap = {};
+
+  document
+    .querySelectorAll('.teacher-replacement-select')
+    .forEach(select => {
+      teacherMap[select.dataset.lessonId] = select.value;
+    });
+
+  change = {
+    ...change,
+    lesson_ids: selectedIds(),
+    teacher_by_lesson: teacherMap
+  };
+}
 
   if (action === 'remove_lesson') {
     change = {
@@ -1207,6 +1428,7 @@ async function applyChange() {
       subject: replacementSubject.value,
       teacher: replacementTeacher.value,
       room: replacementRoom.value,
+      subject_mode: subjectMode.value,
       lesson_ids: selectedIds()
     };
   }
@@ -1251,7 +1473,7 @@ async function applyChange() {
   renderDynamicSchedule();
   renderAction();
 
-  changeStatus.textContent = 'Новое расписание составлено';
+  changeStatus.textContent = result.message || 'Новое расписание составлено';
   changeStatus.className = 'status ok';
 }
 

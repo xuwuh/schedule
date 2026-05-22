@@ -686,3 +686,55 @@ h1 {
    width: 170px;
 }
 
+/* Красивое выравнивание чекбоксов */
+
+.check-line {
+   display: grid;
+   grid-template-columns: 18px 1fr;
+   gap: 10px;
+   align-items: start;
+
+   text-transform: none;
+   font-size: 13px;
+   line-height: 1.35;
+}
+
+.check-line input {
+   width: 16px;
+   height: 16px;
+   margin: 1px 0 0 0;
+   padding: 0;
+}
+
+.check-line span {
+   display: block;
+}
+
+
+/* Карточки выбора замены преподавателя */
+
+.replacement-list {
+   display: grid;
+   gap: 12px;
+}
+
+.replacement-card {
+   border: 2px solid rgba(47, 95, 122, .22);
+   border-radius: 12px;
+   padding: 14px;
+   background: rgba(255, 255, 255, .35);
+}
+
+.replacement-title {
+   font-weight: 1000;
+   color: var(--blue);
+   margin-bottom: 6px;
+}
+
+.replacement-info {
+   font-size: 13px;
+   font-weight: 800;
+   line-height: 1.35;
+   opacity: .85;
+   margin-bottom: 10px;
+}
